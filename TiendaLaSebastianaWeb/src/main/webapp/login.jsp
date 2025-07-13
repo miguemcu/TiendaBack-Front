@@ -1,3 +1,10 @@
+<%-- 
+    Document   : index
+    Created on : 12/07/2025, 7:19:47 p. m.
+    Author     : Sebastian
+--%>
+
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
 <html lang="es">
 
@@ -32,12 +39,15 @@
                             <div class="tab-pane fade show active" id="login" role="tabpanel">
                                 <form>
                                     <div class="mb-3">
-                                        <label for="loginEmail" class="form-label">Correo electrónico</label>
-                                        <input type="email" class="form-control" id="loginEmail" required>
+                                        <label for="loginName" class="form-label">Nombre completo</label>
+                                        <input type="text" class="form-control" id="loginName" required maxlength="50"
+                                            pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ ]{1,50}"
+                                            title="Solo letras, máximo 50 caracteres">
                                     </div>
                                     <div class="mb-3">
-                                        <label for="loginPassword" class="form-label">Contraseña</label>
-                                        <input type="password" class="form-control" id="loginPassword" required>
+                                        <label for="loginDocument" class="form-label">Documento</label>
+                                        <input type="text" class="form-control" id="loginDocument" required minlength="8"
+                                            maxlength="15" pattern="\d{8,15}" title="Solo números, entre 8 y 15 dígitos">
                                     </div>
                                     <button type="submit" class="btn btn-primary w-100">Iniciar Sesión</button>
                                 </form>
@@ -48,15 +58,14 @@
                                 <form>
                                     <div class="mb-3">
                                         <label for="registerName" class="form-label">Nombre completo</label>
-                                        <input type="text" class="form-control" id="registerName" required>
+                                        <input type="text" class="form-control" id="registerName" required maxlength="50"
+                                            pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ ]{1,50}"
+                                            title="Solo letras, máximo 50 caracteres">
                                     </div>
                                     <div class="mb-3">
-                                        <label for="registerEmail" class="form-label">Correo electrónico</label>
-                                        <input type="email" class="form-control" id="registerEmail" required>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="registerPassword" class="form-label">Contraseña</label>
-                                        <input type="password" class="form-control" id="registerPassword" required>
+                                        <label for="registerDocument" class="form-label">Documento</label>
+                                        <input type="text" class="form-control" id="registerDocument" required minlength="8"
+                                            maxlength="15" pattern="\d{8,15}" title="Solo números, entre 8 y 15 dígitos">
                                     </div>
                                     <button type="submit" class="btn btn-success w-100">Registrarse</button>
                                 </form>
@@ -71,6 +80,5 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"
         crossorigin="anonymous"></script>
+    <script src="auth.js"></script>
 </body>
-
-</html>
