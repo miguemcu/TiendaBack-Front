@@ -6,10 +6,12 @@ package com.mycompany.tiendalasebastianaweb;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Enumeration;
 
 import BusinessLogic.Empleado;
 import BusinessLogic.EmpleadoService;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,122 +25,118 @@ import java.util.logging.Logger;
  * @author Sebastian
  */
 @WebServlet(name = "SvEmpleados", urlPatterns = {"/SvEmpleados"})
+@MultipartConfig
 public class SvEmpleados extends HttpServlet {
 
-    /**
-     * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
-     * methods.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
-    protected void processRequest(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        response.setContentType("text/html;charset=UTF-8");
-        try (PrintWriter out = response.getWriter()) {
-            /* TODO output your page here. You may use following sample code. */
-            out.println("<!DOCTYPE html>");
-            out.println("<html>");
-            out.println("<head>");
-            out.println("<title>Servlet Svempleados</title>");
-            out.println("</head>");
-            out.println("<body>");
-            out.println("<h1>Servlet Svempleados at " + request.getContextPath() + "</h1>");
-            out.println("</body>");
-            out.println("</html>");
-        }
-    }
-
-    // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
-    /**
-     * Handles the HTTP <code>GET</code> method.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        processRequest(request, response);
-    }
-
-    /**
-     * Handles the HTTP <code>POST</code> method.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        String accion = request.getParameter("accion");
-        EmpleadoService service = null;
-
+        boolean esAjax = isAjax(request);
+        response.setContentType("text/plain");
         try {
-            service = new EmpleadoService();
-        } catch (Exception ex) {
-            Logger.getLogger(SvEmpleados.class.getName()).log(Level.SEVERE, null, ex);
-        }
+            String accion = request.getParameter("accion");
+            System.out.println("DEBUG accion backend: " + accion);
+            Enumeration<String> paramNames = request.getParameterNames();
+            while (paramNames.hasMoreElements()) {
+                String param = paramNames.nextElement();
+                System.out.println("PARAM: " + param + " = " + request.getParameter(param));
+            }
+            if (accion == null || accion.isEmpty()) {
+                response.getWriter().write("Acción no especificada.");
+                return;
+            }
 
-        if (accion == null || service == null) {
-            response.sendRedirect("index.jsp");
+            EmpleadoService service = new EmpleadoService();
+
+            if ("login".equals(accion)) {
+                manejarLogin(request, response, service, esAjax);
+                return;
+            }
+            if ("registro".equals(accion)) {
+                manejarRegistro(request, response, service, esAjax);
+                return;
+            }
+            // Si no es ninguna de las dos
+            response.getWriter().write("Acción no reconocida.");
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            response.getWriter().write("Error interno del servidor.");
+        }
+    }
+
+    private void manejarLogin(HttpServletRequest request, HttpServletResponse response,
+                              EmpleadoService service, boolean esAjax) throws IOException, ServletException, Exception {
+        String nombre = request.getParameter("nombre");
+        String documento = request.getParameter("documento");
+
+        Empleado empleado = service.validarDocumento(nombre, documento);
+
+        if (empleado != null) {
+            HttpSession session = request.getSession();
+            session.setAttribute("empleado", empleado);
+
+            if (esAjax) {
+                response.getWriter().write("OK");
+            } else {
+                response.sendRedirect("tienda.jsp");
+            }
+        } else {
+            if (esAjax) {
+                response.getWriter().write("Nombre o documento incorrecto.");
+            } else {
+                request.setAttribute("error", "Nombre o documento incorrecto.");
+                request.getRequestDispatcher("login.jsp").forward(request, response);
+            }
+        }
+    }
+
+    private void manejarRegistro(HttpServletRequest request, HttpServletResponse response,
+                                 EmpleadoService service, boolean esAjax) throws IOException, ServletException, Exception {
+        String nombre = request.getParameter("nombre");
+        String documento = request.getParameter("documento");
+
+        // Normaliza y valida
+        if (nombre == null || documento == null || nombre.trim().isEmpty() || documento.trim().isEmpty()) {
+            if (esAjax) {
+                response.getWriter().write("Nombre y documento son obligatorios.");
+            } else {
+                request.setAttribute("error", "Nombre y documento son obligatorios.");
+                request.getRequestDispatcher("login.jsp").forward(request, response);
+            }
             return;
         }
 
-        switch (accion) {
-            case "login":
-                String nombreLogin = request.getParameter("nombre");
-                String documentoLogin = request.getParameter("documento");
+        // Normaliza para evitar problemas de espacios
+        nombre = nombre.trim();
+        documento = documento.trim();
 
-                Empleado empleado = null;
-                try {
-                    empleado = service.validarDocumento(nombreLogin, documentoLogin);
-                } catch (Exception ex) {
-                    Logger.getLogger(SvEmpleados.class.getName()).log(Level.SEVERE, null, ex);
-                }
+        boolean registrado = service.agregarEmpleado(nombre, documento);
 
-                if (empleado != null) {
-                    HttpSession session = request.getSession();
-                    session.setAttribute("empleado", empleado);
-                    response.sendRedirect("tienda.jsp");
-                } else {
-                    request.setAttribute("error", "Nombre o documento incorrecto");
-                    request.getRequestDispatcher("index.jsp").forward(request, response);
-                }
-                break;
-
-            case "registro":
-                String nombreRegistro = request.getParameter("nombre");
-                String documentoRegistro = request.getParameter("documento");
-
-                boolean registrado = false;
-                try {
-                    registrado = service.agregarEmpleado(nombreRegistro, documentoRegistro);
-                } catch (Exception ex) {
-                    Logger.getLogger(SvEmpleados.class.getName()).log(Level.SEVERE, null, ex);
-                }
-
-                if (registrado) {
-                    request.setAttribute("mensaje", "Registro exitoso. Ahora puedes iniciar sesión.");
-                } else {
-                    request.setAttribute("error", "No válido, o ya existe un empleado con ese documento.");
-                }
-
-                request.getRequestDispatcher("index.jsp").forward(request, response);
-                break;
-
-            default:
-                
-                response.sendRedirect("index.jsp");
-                break;
+        if (esAjax) {
+            if (registrado) {
+                response.getWriter().write("Registro exitoso. Ahora puedes iniciar sesión.");
+            } else {
+                response.getWriter().write("No válido, o ya existe un empleado con ese nombre o documento.");
+            }
+        } else {
+            if (registrado) {
+                request.setAttribute("mensaje", "Registro exitoso. Ahora puedes iniciar sesión.");
+            } else {
+                request.setAttribute("error", "No válido, o ya existe un empleado con ese nombre o documento.");
+            }
+            request.getRequestDispatcher("login.jsp").forward(request, response);
         }
     }
-}
 
+    private boolean isAjax(HttpServletRequest request) {
+        String requestedWith = request.getHeader("X-Requested-With");
+        return "XMLHttpRequest".equals(requestedWith);
+    }
+
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        response.sendRedirect("login.jsp");
+    }
+}

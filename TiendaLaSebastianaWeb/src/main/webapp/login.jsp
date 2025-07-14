@@ -30,47 +30,50 @@
                                 </ul>
                             </div>
                             <div class="card-body">
-                                <div class="tab-content" id="authTabsContent">
-                                    <!-- Formulario de Iniciar Sesión -->
-                                    <div class="tab-pane fade show active" id="login" role="tabpanel">
-                                        <form action="SvEmpleados" method="post">
-                                            <input type="hidden" name="accion" value="login">
-                                            <div class="mb-3">
-                                                <label for="nombreLogin" class="form-label">Nombre completo</label>
-                                                <input type="text" class="form-control" id="nombreLogin" name="nombre"
-                                                    required maxlength="50" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ ]{1,50}"
-                                                    title="Solo letras, máximo 50 caracteres">
-                                            </div>
-                                            <div class="mb-3">
-                                                <label for="documentoLogin" class="form-label">Documento</label>
-                                                <input type="text" class="form-control" id="documentoLogin"
-                                                    name="documento" required minlength="8" maxlength="15"
-                                                    pattern="\d{8,15}" title="Solo números, entre 8 y 15 dígitos">
-                                            </div>
-                                            <button type="submit" class="btn btn-primary w-100">Iniciar Sesión</button>
-                                        </form>
+                            <div class="tab-content" id="authTabsContent">
+                                <!-- Formulario de Iniciar Sesión -->
+                                <div class="tab-pane fade show active" id="login" role="tabpanel">
+                                <form id="formLogin">
+
+                                    <div class="mb-3">
+                                    <label for="nombreLogin" class="form-label">Nombre completo</label>
+                                    <input type="text" class="form-control" id="nombreLogin" name="nombre" required>
                                     </div>
 
-                                    <!-- Formulario de Registro -->
-                                    <div class="tab-pane fade" id="register" role="tabpanel">
-                                        <form action="SvEmpleados" method="post">
-                                            <input type="hidden" name="accion" value="registro">
-                                            <div class="mb-3">
-                                                <label for="nombreregister" class="form-label">Nombre completo</label>
-                                                <input type="text" class="form-control" id="nombreregister" name="nombre"
-                                                    required maxlength="50" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ ]{1,50}"
-                                                    title="Solo letras, máximo 50 caracteres">
-                                            </div>
-                                            <div class="mb-3">
-                                                <label for="documentoRegister" class="form-label">Documento</label>
-                                                <input type="text" class="form-control" id="documentoRegister" name="documento"
-                                                    required minlength="8" maxlength="15" pattern="\d{8,15}"
-                                                    title="Solo números, entre 8 y 15 dígitos">
-                                            </div>
-                                            <button type="submit" class="btn btn-success w-100">Registrarse</button>
-                                        </form>
+                                    <div class="mb-3">
+                                    <label for="documentoLogin" class="form-label">Documento</label>
+                                    <input type="text" class="form-control" id="documentoLogin" name="documento" required>
                                     </div>
+
+                                    <div id="mensajeLogin" class="text-danger mb-2"></div>
+
+                                    <button type="submit" class="btn btn-primary w-100">Iniciar Sesión</button>
+                                </form>
                                 </div>
+
+                                <!-- Formulario de Registro -->
+                                <div class="tab-pane fade" id="register" role="tabpanel">
+                                <form id="formRegister">
+                                    <div class="mb-3">
+                                    <label for="nombreregister" class="form-label">Nombre completo</label>
+                                    <input type="text" class="form-control" id="nombreregister" name="nombre"
+                                        required maxlength="50" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ ]{1,50}"
+                                        title="Solo letras, máximo 50 caracteres">
+                                    </div>
+
+                                    <div class="mb-3">
+                                    <label for="documentoRegister" class="form-label">Documento</label>
+                                    <input type="text" class="form-control" id="documentoRegister" name="documento"
+                                        required minlength="8" maxlength="15" pattern="\d{8,15}"
+                                        title="Solo números, entre 8 y 15 dígitos">
+                                    </div>
+
+                                    <div id="mensajeRegistro" class="text-danger mb-2"></div>
+
+                                    <button type="submit" class="btn btn-success w-100">Registrarse</button>
+                                </form>
+                                </div>
+                            </div>
                             </div>
                         </div>
                         <p class="text-center mt-3 text-muted">Nairo Quintana © 2025</p>
@@ -80,4 +83,65 @@
 
             <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"
                 crossorigin="anonymous"></script>
+            <script>
+  // LOGIN
+  document.getElementById("formLogin").addEventListener("submit", function (e) {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+    formData.set("accion", "login");
+
+    for (const [k, v] of formData.entries()) {
+      console.log("formData:", k, v);
+    }
+
+    fetch("SvEmpleados", {
+      method: "POST",
+      body: formData,
+      headers: { "X-Requested-With": "XMLHttpRequest" }
+    })
+    .then(res => res.text())
+    .then(data => {
+      const msg = document.getElementById("mensajeLogin");
+      if (data.trim() === "OK") {
+        msg.classList.remove("text-danger");
+        msg.classList.add("text-success");
+        msg.innerText = "Inicio de sesión exitoso.";
+        setTimeout(() => window.location.href = "tienda.jsp", 1000);
+      } else {
+        msg.classList.remove("text-success");
+        msg.classList.add("text-danger");
+        msg.innerText = data;
+      }
+    });
+  });
+
+  // REGISTRO
+  document.getElementById("formRegister").addEventListener("submit", function (e) {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+    formData.set("accion", "registro");
+
+    fetch("SvEmpleados", {
+      method: "POST",
+      body: formData,
+      headers: { "X-Requested-With": "XMLHttpRequest" }
+    })
+    .then(res => res.text())
+    .then(data => {
+      const msg = document.getElementById("mensajeRegistro");
+      if (data.toLowerCase().includes("exitoso")) {
+        msg.classList.remove("text-danger");
+        msg.classList.add("text-success");
+      } else {
+        msg.classList.remove("text-success");
+        msg.classList.add("text-danger");
+      }
+      msg.innerText = data;
+    });
+  });
+</script>
+
         </body>
+        </html>
