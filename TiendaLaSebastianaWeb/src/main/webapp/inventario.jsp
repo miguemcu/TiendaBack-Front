@@ -6,140 +6,139 @@
 
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <title>Gestión de Inventario - Tienda La Sebastiana</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            padding-top: 50px;
-            background-color: #f8f9fa;
-        }
-        .container {
-            max-width: 800px;
-            background-color: #ffffff;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        .form-group label {
-            font-weight: bold;
-        }
-        .btn-group {
-            margin-top: 20px;
-        }
-    </style>
-</head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Inventario</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/style.css"> </head>
 <body>
+    <div class="container mt-4">
+        <h1>Gestión de Inventario</h1>
+        
+        <div id="messageContainer" class="mt-3"></div>
 
-    <div class="container">
-        <h2 class="mb-4 text-center">Gestión de Inventario</h2>
+        <div class="mb-3">
+            <label for="buscarValor" class="form-label">Buscar por Nombre o ID:</label>
+            <div class="input-group">
+                <input type="text" class="form-control" id="buscarValor" placeholder="Ingrese ID o Nombre del producto">
+                <select class="form-select" id="tipoBusqueda">
+                    <option value="ID">ID</option>
+                    <option value="NOMBRE">Nombre</option>
+                </select>
+                <button class="btn btn-primary" id="btnBuscar">Buscar</button>
+            </div>
+        </div>
 
-        <div id="mensaje" class="alert d-none" role="alert"></div>
+        <h2>Detalles del Producto</h2>
+        <div class="mb-3">
+            <label for="idProductoResultado" class="form-label">ID del Producto:</label>
+            <input type="text" class="form-control" id="idProductoResultado" readonly>
+        </div>
+        <div class="mb-3">
+            <label for="nombreProductoResultado" class="form-label">Nombre del Producto:</label>
+            <input type="text" class="form-control" id="nombreProductoResultado" readonly>
+        </div>
+        <div class="mb-3">
+            <label for="tipoProductoResultado" class="form-label">Tipo:</label>
+            <input type="text" class="form-control" id="tipoProductoResultado" readonly>
+        </div>
+        <div class="mb-3">
+            <label for="precioMayoristaResultado" class="form-label">Precio Mayorista:</label>
+            <input type="text" class="form-control" id="precioMayoristaResultado" readonly>
+        </div>
+        <div class="mb-3">
+            <label for="precioMinoristaResultado" class="form-label">Precio Minorista:</label>
+            <input type="text" class="form-control" id="precioMinoristaResultado" readonly>
+        </div>
+        <div class="mb-3">
+            <label for="fechaVencimientoResultado" class="form-label">Fecha de Vencimiento:</label>
+            <input type="text" class="form-control" id="fechaVencimientoResultado" readonly>
+        </div>
+        <div class="mb-3">
+            <label for="etiquetasResultado" class="form-label">Etiquetas:</label>
+            <input type="text" class="form-control" id="etiquetasResultado" readonly>
+        </div>
+        <div class="mb-3">
+            <label for="cantidadInventarioResultado" class="form-label">Cantidad en Inventario:</label>
+            <input type="text" class="form-control" id="cantidadInventarioResultado" readonly>
+        </div>
 
-        <form id="productoForm">
-            <div class="form-group">
-                <label for="buscarValor">Buscar por Nombre o ID:</label>
-                <div class="input-group">
-                    <input type="text" class="form-control" id="buscarValor" placeholder="Ingrese ID o Nombre del producto">
-                    <div class="input-group-append">
-                        <select class="form-control" id="tipoBusqueda">
-                            <option value="ID">ID</option>
-                            <option value="NOMBRE">Nombre</option>
-                        </select>
-                        <button type="button" class="btn btn-primary" id="btnBuscar">Buscar</button>
-                    </div>
-                </div>
+        <h2 class="mt-4">Ajustar Cantidad</h2>
+        <div class="mb-3">
+            <label for="ajustarCantidadInput" class="form-label">Nueva Cantidad:</label>
+            <div class="input-group">
+                <input type="number" class="form-control" id="ajustarCantidadInput" placeholder="Ingrese la nueva cantidad para el producto buscado">
+                <button class="btn btn-warning" id="btnAjustar">Ajustar Cantidad</button>
             </div>
+        </div>
 
-            <hr>
+        <h2 class="mt-4">Crear Nuevo Producto</h2>
+        <div class="mb-3">
+            <button class="btn btn-success" id="btnCrearNuevo">Crear Nuevo Producto</button>
+        </div>
 
-            <h4 class="mb-3">Detalles del Producto</h4>
-
-            <div class="form-group">
-                <label for="id">ID del Producto:</label>
-                <input type="text" class="form-control" id="id" disabled>
-            </div>
-            <div class="form-group">
-                <label for="nombre">Nombre del Producto:</label>
-                <input type="text" class="form-control" id="nombre" disabled>
-            </div>
-            <div class="form-group">
-                <label for="tipo">Tipo:</label>
-                <input type="text" class="form-control" id="tipo" disabled>
-            </div>
-            <div class="form-group">
-                <label for="precioMayor">Precio Mayorista:</label>
-                <input type="text" class="form-control" id="precioMayor" disabled>
-            </div>
-            <div class="form-group">
-                <label for="precioMenor">Precio Minorista:</label>
-                <input type="text" class="form-control" id="precioMenor" disabled>
-            </div>
-            <div class="form-group">
-                <label for="ficha">Ficha Técnica / Etiquetas:</label>
-                <textarea class="form-control" id="ficha" rows="3" disabled></textarea>
-            </div>
-            <div class="form-group">
-                <label for="cantidad">Cantidad en Inventario:</label>
-                <input type="number" class="form-control" id="cantidad" min="0">
-            </div>
-
-            <div class="btn-group d-flex justify-content-between">
-                <button type="button" class="btn btn-success" id="btnAjustar">Ajustar Cantidad</button>
-                <button type="button" class="btn btn-info" id="btnLimpiar">Limpiar Campos</button>
-                <button type="button" class="btn btn-secondary" id="btnNuevo">Crear Nuevo Producto</button>
-            </div>
-        </form>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Función para mostrar mensajes
-        function showMessage(message, type = 'info') {
-            const mensajeDiv = document.getElementById("mensaje");
-            mensajeDiv.textContent = message;
-            mensajeDiv.className = `alert alert-${type}`;
-            mensajeDiv.classList.remove('d-none');
+        // Función showMessage
+        function showMessage(message, type) {
+            const messageContainer = document.getElementById('messageContainer');
+            if (!messageContainer) {
+                console.error("El contenedor de mensajes 'messageContainer' no fue encontrado.");
+                return;
+            }
+            messageContainer.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                                                ${message}
+                                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                            </div>`;
             setTimeout(() => {
-                mensajeDiv.classList.add('d-none');
+                const alertElement = messageContainer.querySelector('.alert');
+                if (alertElement) {
+                    alertElement.classList.remove('show');
+                    alertElement.classList.add('fade');
+                    setTimeout(() => alertElement.remove(), 150);
+                }
             }, 5000);
-        }
-
-        // Función para limpiar todos los campos del formulario
-        function clearFields() {
-            document.getElementById("id").value = "";
-            document.getElementById("nombre").value = "";
-            document.getElementById("tipo").value = "";
-            document.getElementById("cantidad").value = "";
-            document.getElementById("precioMayor").value = "";
-            document.getElementById("precioMenor").value = "";
-            document.getElementById("ficha").value = "";
-            document.getElementById("buscarValor").value = "";
         }
 
         // Event Listener para el botón Buscar
         document.getElementById("btnBuscar").addEventListener("click", function() {
-            const buscarValor = document.getElementById("buscarValor").value;
-            const tipoBusqueda = document.getElementById("tipoBusqueda").value;
+            const buscarValorInput = document.getElementById("buscarValor");
+            const tipoBusquedaSelect = document.getElementById("tipoBusqueda");
 
-            if (buscarValor.trim() === "") {
+            if (!buscarValorInput || !tipoBusquedaSelect) {
+                console.error("DEBUG JS: No se encontraron los elementos 'buscarValor' o 'tipoBusqueda'.");
+                showMessage("Error interno: No se pudo acceder a los campos de búsqueda.", "danger");
+                return;
+            }
+
+            const buscarValor = buscarValorInput.value;
+            const tipoBusqueda = tipoBusquedaSelect.value;
+
+            if (typeof buscarValor !== 'string' || buscarValor.trim() === "") {
                 showMessage("Por favor, ingrese un valor para buscar.", "warning");
                 return;
             }
 
-            const formData = new FormData(); // Esta línea es la que falla si no está definida
+            const formData = new FormData();
             formData.append("accion", "buscar");
             formData.append("valor", buscarValor);
             formData.append("busqueda", tipoBusqueda);
 
+            const params = new URLSearchParams();
+            for (let pair of formData.entries()) {
+                params.append(pair[0], pair[1]);
+            }
+
             fetch('SvProductos', {
                 method: 'POST',
-                body: formData
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: params.toString()
             })
             .then(response => {
                 if (!response.ok) {
@@ -152,39 +151,47 @@
                 return response.json();
             })
             .then(data => {
-                if (data.error) {
-                    showMessage("Error al buscar producto: " + data.error, "danger");
-                    clearFields();
-                } else {
-                    const p = data.producto;
-                    document.getElementById("id").value = p.id;
-                    document.getElementById("nombre").value = p.nombre;
-                    document.getElementById("tipo").value = p.tipoProducto;
-                    document.getElementById("cantidad").value = data.cantidad;
-                    document.getElementById("precioMayor").value = p.precioMayorista;
-                    document.getElementById("precioMenor").value = p.precio;
-                    document.getElementById("ficha").value = p.etiquetas;
+                console.log("Respuesta del servidor (Buscar):", data);
+                if (data.producto) {
+                    document.getElementById('idProductoResultado').value = data.producto.id || '';
+                    document.getElementById('nombreProductoResultado').value = data.producto.nombre || '';
+                    document.getElementById('tipoProductoResultado').value = data.producto.tipoProducto || '';
+                    document.getElementById('precioMayoristaResultado').value = data.producto.precioMayorista || '';
+                    document.getElementById('precioMinoristaResultado').value = data.producto.precio || '';
+                    document.getElementById('fechaVencimientoResultado').value = data.producto.fechaDeVencimiento ? new Date(data.producto.fechaDeVencimiento).toLocaleDateString('es-CO') : 'N/A';
+                    document.getElementById('etiquetasResultado').value = (data.producto.etiquetas && data.producto.etiquetas.length > 0) ? data.producto.etiquetas.join(', ') : 'N/A';
+                    document.getElementById('cantidadInventarioResultado').value = data.cantidad || '';
                     showMessage("Producto encontrado.", "success");
+                } else {
+                    // Limpiar campos si no se encuentra producto
+                    document.getElementById('idProductoResultado').value = '';
+                    document.getElementById('nombreProductoResultado').value = '';
+                    document.getElementById('tipoProductoResultado').value = '';
+                    document.getElementById('precioMayoristaResultado').value = '';
+                    document.getElementById('precioMinoristaResultado').value = '';
+                    document.getElementById('fechaVencimientoResultado').value = '';
+                    document.getElementById('etiquetasResultado').value = '';
+                    document.getElementById('cantidadInventarioResultado').value = '';
+                    showMessage("Producto no encontrado.", "warning");
                 }
             })
             .catch(error => {
-                console.error('Error en la petición fetch:', error);
+                console.error("Error en la petición fetch (Buscar):", error);
                 showMessage("Ha ocurrido un error en la comunicación con el servidor: " + error.message, "danger");
-                clearFields();
             });
         });
 
         // Event Listener para el botón Ajustar Cantidad
         document.getElementById("btnAjustar").addEventListener("click", function() {
-            const idProducto = document.getElementById("id").value;
-            const nuevaCantidad = document.getElementById("cantidad").value;
+            const idProducto = document.getElementById('idProductoResultado').value;
+            const nuevaCantidad = document.getElementById('ajustarCantidadInput').value;
 
-            if (idProducto.trim() === "" || nuevaCantidad.trim() === "") {
-                showMessage("Primero busque un producto y asegúrese que la cantidad no esté vacía.", "warning");
+            if (idProducto.trim() === "") {
+                showMessage("Primero, busque un producto para ajustar su cantidad.", "warning");
                 return;
             }
-            if (isNaN(nuevaCantidad) || parseInt(nuevaCantidad) < 0) {
-                showMessage("La cantidad debe ser un número entero no negativo.", "warning");
+            if (nuevaCantidad.trim() === "" || isNaN(nuevaCantidad)) {
+                showMessage("Por favor, ingrese una cantidad numérica válida para ajustar.", "warning");
                 return;
             }
 
@@ -193,9 +200,17 @@
             formData.append("id", idProducto);
             formData.append("nuevaCantidad", nuevaCantidad);
 
+            const params = new URLSearchParams();
+            for (let pair of formData.entries()) {
+                params.append(pair[0], pair[1]);
+            }
+
             fetch('SvProductos', {
                 method: 'POST',
-                body: formData
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: params.toString()
             })
             .then(response => {
                 if (!response.ok) {
@@ -208,30 +223,27 @@
                 return response.json();
             })
             .then(data => {
-                if (data.error) {
-                    showMessage("Error al ajustar cantidad: " + data.error, "danger");
+                console.log("Respuesta del servidor (Ajustar):", data);
+                if (data.mensaje) {
+                    showMessage(data.mensaje, "success");
+                    // Opcional: Volver a buscar el producto para actualizar la cantidad mostrada
+                    document.getElementById('btnBuscar').click();
                 } else {
-                    showMessage(data.mensaje || "Cantidad ajustada con éxito.", "success");
+                    showMessage("Error al ajustar la cantidad: " + (data.error || "Mensaje desconocido."), "danger");
                 }
             })
             .catch(error => {
-                console.error('Error en la petición fetch:', error);
-                showMessage("Ha ocurrido un error al ajustar la cantidad: " + error.message, "danger");
+                console.error("Error en la petición fetch (Ajustar):", error);
+                showMessage("Ha ocurrido un error en la comunicación con el servidor al ajustar: " + error.message, "danger");
             });
         });
 
-        // Event Listener para el botón Limpiar Campos
-        document.getElementById("btnLimpiar").addEventListener("click", clearFields);
-
-        // Event Listener para el botón Crear Nuevo Producto (sin implementar backend aún)
-        document.getElementById("btnNuevo").addEventListener("click", function() {
-            clearFields();
-            showMessage("Función para crear nuevo producto no implementada aún en el backend.", "info");
+        // Event Listener para el botón Crear Nuevo Producto
+        document.getElementById("btnCrearNuevo").addEventListener("click", function() {
+            // Aquí puedes redirigir a otra página o abrir un modal para el formulario de creación
+            showMessage("Funcionalidad 'Crear Nuevo Producto' no implementada aún en el frontend.", "info");
+            console.log("DEBUG JS: Redirigiendo o abriendo modal para crear nuevo producto...");
         });
-
-        // Inicializar: limpiar campos al cargar la página
-        document.addEventListener("DOMContentLoaded", clearFields);
-
     </script>
-    </body>
+</body>
 </html>
