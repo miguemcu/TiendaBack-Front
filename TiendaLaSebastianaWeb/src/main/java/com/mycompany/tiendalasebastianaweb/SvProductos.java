@@ -6,6 +6,7 @@ package com.mycompany.tiendalasebastianaweb;
 
 import BusinessLogic.Producto;
 import BusinessLogic.ProductoService;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import jakarta.servlet.ServletException;
@@ -19,60 +20,72 @@ import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonSerializer;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.stream.Collectors;
 
 @WebServlet(name = "SvProductos", urlPatterns = {"/SvProductos"})
 public class SvProductos extends HttpServlet {
 
-    // Modificamos la inicialización de Gson para incluir un TypeAdapter para LocalDate
     private Gson gson;
 
     @Override
     public void init() throws ServletException {
         super.init();
-        // Creador de un Serializador para LocalDate
-        JsonSerializer<LocalDate> localDateSerializer = (src, typeOfSrc, context) ->
-                src == null ? null : context.serialize(src.format(DateTimeFormatter.ISO_LOCAL_DATE));
-
-        // Creador de un Deserializador para LocalDate
-        JsonDeserializer<LocalDate> localDateDeserializer = (json, typeOfT, context) ->
-                json == null ? null : LocalDate.parse(json.getAsString(), DateTimeFormatter.ISO_LOCAL_DATE);
-
-        // Construir Gson con los TypeAdapters
+        JsonSerializer<LocalDate> localDateSerializer = (src, typeOfSrc, context) -> {
+            if (src == null) return null;
+            return context.serialize(src.format(DateTimeFormatter.ISO_LOCAL_DATE));
+        };
+        JsonDeserializer<LocalDate> localDateDeserializer = (json, typeOfT, context) -> {
+            if (json == null || json.isJsonNull() || json.getAsString().isEmpty()) return null;
+            try {
+                return LocalDate.parse(json.getAsString(), DateTimeFormatter.ISO_LOCAL_DATE);
+            } catch (DateTimeParseException e) {
+                try {
+                    return LocalDate.parse(json.getAsString(), DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+                } catch (DateTimeParseException ex) {
+                    System.err.println("DEBUG SvProductos - init: Error al parsear fecha '" + json.getAsString() + "': " + ex.getMessage());
+                    throw new com.google.gson.JsonParseException("Error al parsear fecha: " + ex.getMessage(), ex);
+                }
+            }
+        };
         this.gson = new GsonBuilder()
                 .registerTypeAdapter(LocalDate.class, localDateSerializer)
                 .registerTypeAdapter(LocalDate.class, localDateDeserializer)
-                .setPrettyPrinting() // Opcional: para que el JSON se vea más legible
+                .setPrettyPrinting()
                 .create();
     }
 
     private static class ErrorResponse {
         String error;
-        public ErrorResponse(String error) {
-            this.error = error;
-        }
+        public ErrorResponse(String error) { this.error = error; }
     }
 
     private static class SuccessResponse {
         String mensaje;
-        public SuccessResponse(String mensaje) {
-            this.mensaje = mensaje;
-        }
+        public SuccessResponse(String mensaje) { this.mensaje = mensaje; }
     }
 
     private static class ProductoBusquedaResponse {
         Producto producto;
         int cantidad;
-
         public ProductoBusquedaResponse(Producto producto, int cantidad) {
             this.producto = producto;
             this.cantidad = cantidad;
         }
+        public Producto getProducto() { return producto; }
+        public int getCantidad() { return cantidad; }
+    }
+
+    private static class RequestData {
+        String accion;
+        String valor;
+        String busqueda;
+        String id;
+        String nuevaCantidad;
     }
 
     private boolean isValidLong(String str) {
-        if (str == null || str.isEmpty()) {
-            return false;
-        }
+        if (str == null || str.isEmpty()) return false;
         try {
             Long.parseLong(str);
             return true;
@@ -84,53 +97,70 @@ public class SvProductos extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        System.out.println("DEBUG SvProductos - doGet: Se recibió una petición GET.");
-        response.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
         response.setContentType("application/json;charset=UTF-8");
-        response.getWriter().print(gson.toJson(new ErrorResponse("Método GET no permitido para esta operación. Se espera un POST.")));
+        PrintWriter out = null;
+        try {
+            out = response.getWriter();
+            System.out.println("DEBUG SvProductos - doGet: Se recibió una petición GET. No permitido para operaciones principales.");
+            response.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+            out.print(gson.toJson(new ErrorResponse("Método GET no permitido para esta operación. Se espera un POST.")));
+        } catch (Exception ex) {
+            System.err.println("DEBUG SvProductos - doGet: Error inesperado: " + ex.getMessage());
+            ex.printStackTrace();
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            if (out != null) out.print(gson.toJson(new ErrorResponse("Error interno del servidor en GET: " + ex.getMessage())));
+        } finally {
+            if (out != null) {
+                out.flush();
+                out.close();
+            }
+        }
     }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-
         response.setContentType("application/json;charset=UTF-8");
-        PrintWriter out = response.getWriter();
-
-        // --- INICIO DE DEPURACIÓN DE PARÁMETROS ---
-        System.out.println("DEBUG SvProductos - doPost: Recibiendo petición POST.");
-        java.util.Enumeration<String> parameterNames = request.getParameterNames();
-        while (parameterNames.hasMoreElements()) {
-            String paramName = parameterNames.nextElement();
-            String[] paramValues = request.getParameterValues(paramName);
-            for (String paramValue : paramValues) {
-                System.out.println("DEBUG SvProductos - Parámetro: " + paramName + " = " + paramValue);
-            }
-        }
-        // --- FIN DE DEPURACIÓN DE PARÁMETROS ---
-
-        String accion = request.getParameter("accion");
-        System.out.println("DEBUG SvProductos - doPost: Accion recibida: '" + accion + "'");
+        PrintWriter out = null;
+        RequestData requestData = null;
 
         try {
-            if (accion == null || accion.isEmpty()) {
-                System.out.println("DEBUG SvProductos - doPost: Accion es nula o vacía.");
+            out = response.getWriter();
+            System.out.println("DEBUG SvProductos - doPost: Recibiendo petición POST.");
+
+            String requestBody = request.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
+            System.out.println("DEBUG SvProductos - doPost: Cuerpo de la petición JSON: " + requestBody);
+
+            if (requestBody == null || requestBody.isEmpty()) {
+                System.out.println("DEBUG SvProductos - doPost: Cuerpo de la petición JSON vacío.");
                 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                out.print(gson.toJson(new ErrorResponse("Acción no especificada.")));
+                out.print(gson.toJson(new ErrorResponse("Cuerpo de la petición vacío. Se espera un JSON.")));
                 return;
             }
+
+            requestData = gson.fromJson(requestBody, RequestData.class);
+
+            if (requestData == null || requestData.accion == null || requestData.accion.isEmpty()) {
+                System.out.println("DEBUG SvProductos - doPost: Accion es nula o vacía en el JSON.");
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                out.print(gson.toJson(new ErrorResponse("Acción no especificada en el JSON.")));
+                return;
+            }
+
+            String accion = requestData.accion;
+            System.out.println("DEBUG SvProductos - doPost: Accion recibida del JSON: '" + accion + "'");
 
             ProductoService service = new ProductoService();
 
             switch (accion) {
                 case "buscar": {
                     System.out.println("DEBUG SvProductos - doPost: Ejecutando accion 'buscar'.");
-                    handleBuscar(request, response, out, service);
+                    handleBuscar(requestData, response, out, service);
                     break;
                 }
                 case "ajustar": {
                     System.out.println("DEBUG SvProductos - doPost: Ejecutando accion 'ajustar'.");
-                    handleAjustar(request, response, out, service);
+                    handleAjustar(requestData, response, out, service);
                     break;
                 }
                 case "crear": {
@@ -146,20 +176,27 @@ public class SvProductos extends HttpServlet {
                     break;
             }
 
+        } catch (com.google.gson.JsonSyntaxException jsonEx) {
+            System.err.println("DEBUG SvProductos - doPost: Error de sintaxis JSON: " + jsonEx.getMessage());
+            jsonEx.printStackTrace();
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            if (out != null) out.print(gson.toJson(new ErrorResponse("Formato JSON inválido en la petición.")));
         } catch (Exception ex) {
             System.err.println("DEBUG SvProductos - doPost: Error inesperado: " + ex.getMessage());
             ex.printStackTrace();
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            out.print(gson.toJson(new ErrorResponse("Error interno del servidor: " + ex.getMessage())));
+            if (out != null) out.print(gson.toJson(new ErrorResponse("Error interno del servidor: " + ex.getMessage())));
         } finally {
-            out.flush();
-            out.close();
+            if (out != null) {
+                out.flush();
+                out.close();
+            }
         }
     }
 
-    private void handleBuscar(HttpServletRequest request, HttpServletResponse response, PrintWriter out, ProductoService service) throws Exception {
-        String valorBusqueda = request.getParameter("valor");
-        String tipoBusqueda = request.getParameter("busqueda");
+    private void handleBuscar(RequestData requestData, HttpServletResponse response, PrintWriter out, ProductoService service) throws Exception {
+        String valorBusqueda = requestData.valor;
+        String tipoBusqueda = requestData.busqueda;
 
         System.out.println("DEBUG SvProductos - handleBuscar: Valor: '" + valorBusqueda + "', Tipo: '" + tipoBusqueda + "'");
 
@@ -194,9 +231,9 @@ public class SvProductos extends HttpServlet {
         }
     }
 
-    private void handleAjustar(HttpServletRequest request, HttpServletResponse response, PrintWriter out, ProductoService service) throws Exception {
-        String idStr = request.getParameter("id");
-        String nuevaCantidadStr = request.getParameter("nuevaCantidad");
+    private void handleAjustar(RequestData requestData, HttpServletResponse response, PrintWriter out, ProductoService service) throws Exception {
+        String idStr = requestData.id;
+        String nuevaCantidadStr = requestData.nuevaCantidad;
 
         System.out.println("DEBUG SvProductos - handleAjustar: ID: '" + idStr + "', Nueva Cantidad: '" + nuevaCantidadStr + "'");
 
