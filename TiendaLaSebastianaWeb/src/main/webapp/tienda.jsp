@@ -19,23 +19,16 @@
         <h2 class="text-center mb-4">Bienvenido a Tienda La Sebastiana</h2>
 
         <div class="row g-4 justify-content-center">
-            <!-- Columna izquierda -->
             <div class="col-md-5">
                 <div class="d-grid gap-4">
-                    <a href="hacerVenta.jsp" class="btn btn-primary btn-lg">Hacer Venta</a>
-                    <a href="inventario.jsp" class="btn btn-warning btn-lg">Inventario</a>
-                </div>
-            </div>
-
-            <!-- Columna derecha -->
-            <div class="col-md-5">
-                <div class="d-grid gap-4">
-                    <a href="devolucion.jsp" class="btn btn-danger btn-lg">Devolución</a>
-                    <a href="reportes.jsp" class="btn btn-success btn-lg">Reportes</a>
+                    <form method="GET" action="SvProductos">
+                        <button type="submit" class="btn btn-primary btn-lg w-100">Inventario</button>
+                    </form>
+                    <a href="inventario.jsp" class="btn btn-warning btn-lg">Buscar/Ajustar Inventario</a>
+                    <a href="SvMovimientos" class="btn btn-info btn-lg">Movimientos</a>
                 </div>
             </div>
         </div>
-
         <div class="text-center mt-5">
             <p class="text-muted">Nairo Quintana © 2025</p>
         </div>

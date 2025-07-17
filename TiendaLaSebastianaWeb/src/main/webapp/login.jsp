@@ -34,7 +34,6 @@
                                 <!-- Formulario de Iniciar Sesión -->
                                 <div class="tab-pane fade show active" id="login" role="tabpanel">
                                 <form id="formLogin">
-
                                     <div class="mb-3">
                                     <label for="nombreLogin" class="form-label">Nombre completo</label>
                                     <input type="text" class="form-control" id="nombreLogin" name="nombre" required>
