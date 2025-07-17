@@ -22,11 +22,16 @@ import com.google.gson.JsonObject; // Necesario para trabajar con objetos JSON
 import com.google.gson.JsonArray; // Necesario para trabajar con arrays JSON
 import com.google.gson.JsonElement; // Para iterar sobre elementos JSON
 import com.google.gson.JsonSyntaxException; // Para manejar errores de sintaxis JSON
+import jakarta.servlet.RequestDispatcher;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList; // Necesario para las etiquetas
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 @WebServlet(name = "SvProductos", urlPatterns = {"/SvProductos"})
@@ -40,12 +45,16 @@ public class SvProductos extends HttpServlet {
         super.init();
         // Serializador para LocalDate (de Java a JSON)
         JsonSerializer<LocalDate> localDateSerializer = (src, typeOfSrc, context) -> {
-            if (src == null) return null;
+            if (src == null) {
+                return null;
+            }
             return context.serialize(src.format(DateTimeFormatter.ISO_LOCAL_DATE));
         };
         // Deserializador para LocalDate (de JSON a Java)
         JsonDeserializer<LocalDate> localDateDeserializer = (json, typeOfT, context) -> {
-            if (json == null || json.isJsonNull() || json.getAsString().isEmpty()) return null;
+            if (json == null || json.isJsonNull() || json.getAsString().isEmpty()) {
+                return null;
+            }
             try {
                 return LocalDate.parse(json.getAsString(), DateTimeFormatter.ISO_LOCAL_DATE);
             } catch (DateTimeParseException e) {
@@ -67,31 +76,48 @@ public class SvProductos extends HttpServlet {
 
     // Clases internas para la estructura de respuesta JSON
     private static class ErrorResponse {
+
         String error;
-        public ErrorResponse(String error) { this.error = error; }
+
+        public ErrorResponse(String error) {
+            this.error = error;
+        }
     }
 
     private static class SuccessResponse {
+
         String mensaje;
-        public SuccessResponse(String mensaje) { this.mensaje = mensaje; }
+
+        public SuccessResponse(String mensaje) {
+            this.mensaje = mensaje;
+        }
     }
 
     private static class ProductoBusquedaResponse {
+
         Producto producto;
         int cantidad;
+
         public ProductoBusquedaResponse(Producto producto, int cantidad) {
             this.producto = producto;
             this.cantidad = cantidad;
         }
-        public Producto getProducto() { return producto; }
-        public int getCantidad() { return cantidad; }
+
+        public Producto getProducto() {
+            return producto;
+        }
+
+        public int getCantidad() {
+            return cantidad;
+        }
     }
 
     // Ya no necesitamos la clase RequestData genérica, se parseará directamente a JsonObject
-
     // Método auxiliar para validar si un String es un número Long válido
     private boolean isValidLong(String str) {
-        if (str == null || str.isEmpty()) return false;
+        if (str == null || str.isEmpty()) {
+            return false;
+        }
         try {
             Long.parseLong(str);
             return true;
@@ -103,8 +129,31 @@ public class SvProductos extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        response.setContentType("application/json;charset=UTF-8");
+        Map<Producto, Integer> productos = new HashMap<>();
+        ProductoService productoServicio = new ProductoService();
+        try {
+
+            productos = productoServicio.getProductos();
+            request.setAttribute("productos", productos);
+            RequestDispatcher dispatcher = request.getRequestDispatcher("verInventario.jsp");
+            dispatcher.forward(request, response);
+
+        } catch (Exception ex) {
+            Logger.getLogger(SvProductos.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        System.out.println(
+                "DEBUG SvProductos - doGet: Se recibió una petición GET.");
+        response.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+
+        response.setContentType(
+                "application/json;charset=UTF-8");
+        response.getWriter()
+                .print(gson.toJson(new ErrorResponse("Método GET no permitido para esta operación. Se espera un POST.")));
+        response.setContentType(
+                "application/json;charset=UTF-8");
         PrintWriter out = null;
+
         try {
             out = response.getWriter();
             System.out.println("DEBUG SvProductos - doGet: Se recibió una petición GET. No permitido para operaciones principales.");
@@ -114,7 +163,9 @@ public class SvProductos extends HttpServlet {
             System.err.println("DEBUG SvProductos - doGet: Error inesperado: " + ex.getMessage());
             ex.printStackTrace();
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            if (out != null) out.print(gson.toJson(new ErrorResponse("Error interno del servidor en GET: " + ex.getMessage())));
+            if (out != null) {
+                out.print(gson.toJson(new ErrorResponse("Error interno del servidor en GET: " + ex.getMessage())));
+            }
         } finally {
             if (out != null) {
                 out.flush();
@@ -189,12 +240,16 @@ public class SvProductos extends HttpServlet {
             System.err.println("DEBUG SvProductos - doPost: Error de sintaxis JSON: " + jsonEx.getMessage());
             jsonEx.printStackTrace();
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            if (out != null) out.print(gson.toJson(new ErrorResponse("Formato JSON inválido en la petición.")));
+            if (out != null) {
+                out.print(gson.toJson(new ErrorResponse("Formato JSON inválido en la petición.")));
+            }
         } catch (Exception ex) {
             System.err.println("DEBUG SvProductos - doPost: Error inesperado: " + ex.getMessage());
             ex.printStackTrace();
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            if (out != null) out.print(gson.toJson(new ErrorResponse("Error interno del servidor: " + ex.getMessage())));
+            if (out != null) {
+                out.print(gson.toJson(new ErrorResponse("Error interno del servidor: " + ex.getMessage())));
+            }
         } finally {
             if (out != null) {
                 out.flush();
@@ -212,12 +267,12 @@ public class SvProductos extends HttpServlet {
             long idProducto = jsonRequest.has("id") ? jsonRequest.get("id").getAsLong() : -1; // Usar un valor por defecto si no existe
             double precioMayorista = jsonRequest.has("precioMayorista") ? jsonRequest.get("precioMayorista").getAsDouble() : -1.0;
             double precioMinorista = jsonRequest.has("precioMinorista") ? jsonRequest.get("precioMinorista").getAsDouble() : -1.0;
-            
+
             LocalDate fechaVencimiento = null;
             if (jsonRequest.has("fechaVencimiento") && !jsonRequest.get("fechaVencimiento").isJsonNull() && !jsonRequest.get("fechaVencimiento").getAsString().isEmpty()) {
                 fechaVencimiento = LocalDate.parse(jsonRequest.get("fechaVencimiento").getAsString(), DateTimeFormatter.ISO_LOCAL_DATE);
             }
-            
+
             ArrayList<String> etiquetas = new ArrayList<>();
             if (jsonRequest.has("etiquetas") && jsonRequest.get("etiquetas").isJsonArray()) {
                 JsonArray jsonEtiquetas = jsonRequest.get("etiquetas").getAsJsonArray();
@@ -236,12 +291,14 @@ public class SvProductos extends HttpServlet {
             int cantidad = jsonRequest.has("cantidad") ? jsonRequest.get("cantidad").getAsInt() : -1;
 
             // Validaciones de campos requeridos y valores válidos
-            if (tipoProducto == null || tipoProducto.trim().isEmpty() ||
-                nombre == null || nombre.trim().isEmpty() ||
-                idProducto <= 0 || // ID debe ser positivo
-                precioMayorista <= 0 || precioMinorista <= 0 || // Precios deben ser positivos
-                cantidad < 0) { // Cantidad puede ser 0 o más
-                
+            if (tipoProducto == null || tipoProducto.trim().isEmpty()
+                    || nombre == null || nombre.trim().isEmpty()
+                    || idProducto <= 0
+                    || // ID debe ser positivo
+                    precioMayorista <= 0 || precioMinorista <= 0
+                    || // Precios deben ser positivos
+                    cantidad < 0) { // Cantidad puede ser 0 o más
+
                 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 out.print(gson.toJson(new ErrorResponse("Datos de producto incompletos o inválidos. Asegúrese de que ID, nombre, tipo, precios y cantidad sean válidos y estén presentes.")));
                 return;
@@ -262,20 +319,17 @@ public class SvProductos extends HttpServlet {
                 response.setStatus(HttpServletResponse.SC_CONFLICT); // 409 Conflict
                 out.print(gson.toJson(new ErrorResponse("Ya existe un producto con el nombre proporcionado.")));
                 return;
-            }
-            // --- FIN VALIDACIÓN DE DUPLICADOS ---
-
-
-            // Llama al servicio para agregar el producto
+            } // --- FIN VALIDACIÓN DE DUPLICADOS ---
+// Llama al servicio para agregar el producto
             boolean creado = service.añadirProducto(
-                tipoProducto, 
-                nombre, 
-                idProducto, 
-                precioMayorista, 
-                precioMinorista, 
-                fechaVencimiento, 
-                etiquetas, 
-                cantidad
+                    tipoProducto,
+                    nombre,
+                    idProducto,
+                    precioMayorista,
+                    precioMinorista,
+                    fechaVencimiento,
+                    etiquetas,
+                    cantidad
             );
 
             if (creado) {
@@ -337,7 +391,7 @@ public class SvProductos extends HttpServlet {
         if (producto != null) {
             System.out.println("DEBUG SvProductos - handleBuscar: Producto encontrado: " + producto.getNombre() + " (ID: " + producto.getId() + ")");
             // CORRECCIÓN: Obtener la cantidad del servicio, ya que Producto no tiene getCantidad()
-            cantidadEnInventario = service.getCantidadProducto(producto.getId()); 
+            cantidadEnInventario = service.getCantidadProducto(producto.getId());
             response.setStatus(HttpServletResponse.SC_OK);
             out.print(gson.toJson(new ProductoBusquedaResponse(producto, cantidadEnInventario)));
         } else {

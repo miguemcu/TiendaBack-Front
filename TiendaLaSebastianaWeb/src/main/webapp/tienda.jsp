@@ -22,7 +22,9 @@
             <!-- Columna izquierda -->
             <div class="col-md-5">
                 <div class="d-grid gap-4">
-                    <a href="hacerVenta.jsp" class="btn btn-primary btn-lg">Hacer Venta</a>
+                    <form method="GET" action="SvProductos">
+                        <button type="submit" class="btn btn-primary btn-lg w-100" >Ver Inventario</button>
+                    </form>
                     <a href="inventario.jsp" class="btn btn-warning btn-lg">Inventario</a>
                 </div>
             </div>
