@@ -124,6 +124,9 @@ public class ProductoService {
         return repositorio.eliminarProducto(id);
     }
     
+    public int obtenerCantidadProductoPorId(Long id) throws Exception {
+        return repositorio.obtenerCantidadProductoPorId(id);
+    }
     
 
 }
