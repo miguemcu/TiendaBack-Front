@@ -168,4 +168,17 @@
                 throw new Exception("Ha ocurrido un error al eliminar el producto, por favor contacte al administrador: " + e.getMessage(), e);
             }
         }
+
+        public int obtenerCantidadProductoPorId(Long id) throws Exception {
+            try {
+                var filtro = Filters.eq("producto.id", id);
+                Document doc = collection.find(filtro).first();
+                if (doc != null) {
+                    return doc.getInteger("cantidad", 0); // 0 por defecto si no existe el campo
+                }
+                return 0;
+            } catch (Exception e) {
+                throw new Exception("Error al obtener la cantidad del producto: " + e.getMessage());
+            }
+        }
     }

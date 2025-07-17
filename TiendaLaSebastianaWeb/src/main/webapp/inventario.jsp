@@ -443,8 +443,30 @@
                                 .then(data => {
                                     console.log("DEBUG JS: Datos JSON recibidos (Ajustar):", data);
                                     if (data.mensaje) {
-                                        showMessage(data.mensaje, "success"); // Aquí sí se muestra mensaje de éxito para el ajuste
-                                        document.getElementById('btnBuscar').click();
+                                        // Si el ajuste fue exitoso, registra el movimiento
+                                        const cantidadAnterior = document.getElementById('cantidadInventarioResultado').value.trim();
+
+                                        fetch('SvMovimientos', {
+                                            method: 'POST',
+                                            headers: {
+                                                'Content-Type': 'application/x-www-form-urlencoded'
+                                            },
+                                            body: `idProducto=${idProducto}&nuevaCantidad=${nuevaCantidad}&cantidadAnterior=${cantidadAnterior}&comentario=Ajuste desde inventario`
+                                        })
+                                        .then(response => response.json())
+                                        .then(movData => {
+                                            if (movData.success) {
+                                                showMessage(data.mensaje + " " + movData.mensaje, "success");
+                                            } else {
+                                                showMessage(data.mensaje + " " + movData.mensaje, "warning");
+                                            }
+                                            document.getElementById('btnBuscar').click();
+                                        })
+                                        .catch(error => {
+                                            console.error("Error al registrar movimiento:", error);
+                                            showMessage(data.mensaje + " Error al registrar movimiento.", "danger");
+                                            document.getElementById('btnBuscar').click();
+                                        });
                                     } else if (data.error) {
                                         if (data.error === "Producto no encontrado.") {
                                             showMessage('', 'image-404');
